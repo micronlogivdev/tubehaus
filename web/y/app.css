@@ -177,7 +177,9 @@ body.guide-open #scrim { opacity: 1; pointer-events: auto; }
 .card.pl .th.stack::before { content: ""; position: absolute; inset: -4px 8px auto; height: 4px; background: var(--fg3); }
 .card.pl .th .dur { left: auto; right: 4px; }
 .card.pl .s { color: var(--fg2); margin-top: 4px; }
-.card.short .th { aspect-ratio: 9/16; border-radius: 8px; }
+.card.short .th { aspect-ratio: 9/16; border-radius: 8px; background: var(--chip); }
+/* hqdefault is 4:3 with the 16:9 picture letterboxed in its middle 3/4: zoom past the bars so every card is the same */
+.card.short .th img { object-fit: cover; transform: scale(1.34); }
 .card.short .meta { margin-top: 8px; padding-right: 24px; }
 .card.short .t { font-size: 16px; line-height: 22px; }
 .card.short .dots { position: absolute; right: 0; bottom: 20px; }
