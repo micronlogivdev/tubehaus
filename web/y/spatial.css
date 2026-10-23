@@ -45,7 +45,8 @@ html.spatial:not(.tv) #mguide a.act { background: var(--hover); }
 html.spatial:not(.tv) #mguide a.act .ic { color: #fff; }
 
 /* side drawer */
-html.spatial:not(.tv) #guide { top: 8px; bottom: 8px; left: 8px; border-radius: 24px; }
+html.spatial:not(.tv) #guide { top: 8px; bottom: 8px; left: 8px; border-radius: 24px; transform: translateX(calc(-100% - 16px)); }
+html.spatial:not(.tv) body.guide-open #guide { transform: none; }
 html.spatial:not(.tv) .gi { border-radius: 12px; }
 
 /* category chips: a floating glass strip */
