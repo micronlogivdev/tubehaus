@@ -12,9 +12,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="stylesheet" href="/y/app.css?v=__V__">
+<link rel="stylesheet" href="/y/spatial.css?v=__V__">
 <script>
   // apply the theme early so the first paint does not flash white
   try { var s = JSON.parse(localStorage.getItem("yt.settings") || "{}"), t = s.theme || "light";
+    if (t === "spatial") { document.documentElement.classList.add("spatial"); t = "dark"; }
     if (t === "system") t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
     document.documentElement.dataset.theme = t;
     // calm mode: subscriptions only, no Shorts / trending / recommendations (set before the first paint)

@@ -57,7 +57,9 @@ routes.push(
 
 // ---------------------------------------------------------------- theme
 function applyTheme() {
-  const t = settings.theme === "system" ? (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark") : settings.theme;
+  const sp = settings.theme === "spatial";     // ClearTube glass theme: dark colours + spatial.css
+  const t = sp ? "dark" : settings.theme === "system" ? (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark") : settings.theme;
+  document.documentElement.classList.toggle("spatial", sp);
   document.documentElement.dataset.theme = t;
   $('meta[name="theme-color"]').content = t === "dark" ? "#0f0f0f" : "#ffffff";
 }
@@ -223,7 +225,7 @@ setInterval(bell, 10 * 60000);
 
 // ---------------------------------------------------------------- account menu
 $("#acct").onclick = (e) => {
-  const th = { system: $t("기기 테마 사용"), dark: $t("어두운 테마"), light: $t("밝은 테마") };
+  const th = { system: $t("기기 테마 사용"), dark: $t("어두운 테마"), light: $t("밝은 테마"), spatial: "Spatial" };
   popup(e.currentTarget, `<div class="acct-h">${icon("account")}<div><b>ClearTube</b><span>${$t("내 라이브러리")}</span></div></div><hr>` +
     mi("you", "libr", $t("내 페이지")) + mi("history", "history", $t("시청 기록")) + mi("subs", "subs", $t("구독 관리")) + "<hr>" +
     mi("theme", "dark", $t("디자인: ") + th[settings.theme]) + mi("lang", "globe", langLabel() + ": " + LANGS.find(([c]) => c === LANG)[1]) +
@@ -236,8 +238,8 @@ $("#acct").onclick = (e) => {
       if (a === "keys") keysDialog();
       if (a === "lang") langPicker(false);
       if (a === "theme") {
-        const order = ["system", "dark", "light"];
-        settings.theme = order[(order.indexOf(settings.theme) + 1) % 3];
+        const order = ["system", "dark", "light", "spatial"];
+        settings.theme = order[(order.indexOf(settings.theme) + 1) % order.length];
         toast($t("디자인: ") + th[settings.theme]);
       }
     });

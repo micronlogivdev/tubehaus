@@ -597,7 +597,7 @@ export function settingsPage(page) {
     <h2>${$t("설정")}</h2>
     <h3>${$t("모양")}</h3>
     ${row(langLabel(), sel("lang", [["auto", $t("자동 (브라우저 언어)")], ...LANGS]))}
-    ${row($t("테마"), sel("theme", [["system", $t("기기 테마 사용")], ["dark", $t("어두운 테마")], ["light", $t("밝은 테마")]]))}
+    ${row($t("테마"), sel("theme", [["system", $t("기기 테마 사용")], ["dark", $t("어두운 테마")], ["light", $t("밝은 테마")], ["spatial", "Spatial (glass)"]]))}
     ${tog("ambient", $t("앰비언트 모드"), $t("영상 색이 플레이어 뒤로 은은하게 번져요 (어두운 테마)"))}
     ${row($t("TV 모드"), sel("tv", [["auto", $t("자동 (안드로이드 TV 에서 켜짐)")], ["on", $t("켜기")], ["off", $t("끄기")]]), $t("리모컨 방향키로 이동 · 큰 글씨 · 바꾸면 새로고침"))}
     <h3>${$t("재생")}</h3>
