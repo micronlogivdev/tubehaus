@@ -682,7 +682,8 @@ export class Player {
           vw: v.videoWidth, vh: v.videoHeight, rs: v.readyState, ct: Math.round(v.currentTime), frames: q.totalVideoFrames, drop: q.droppedVideoFrames,
           box: `${Math.round(b.width)}x${Math.round(b.height)}`, top: top ? (top.tagName + "." + top.className).slice(0, 60) : "none",
           op: cs.opacity, vis: cs.visibility, disp: cs.display, err: v.error ? v.error.code : "",
-          amb: !!this.ambCanvas?.classList.contains("on"), apple: APPLE_SAFARI, sfx: SFX, mmsUsed: typeof window.ManagedMediaSource };
+          amb: !!this.ambCanvas?.classList.contains("on"), apple: APPLE_SAFARI, sfx: SFX, mmsUsed: typeof window.ManagedMediaSource,
+          ytp: this.root.className, poster: (() => { const p = this.q(".ytp-poster"), c = getComputedStyle(p); return `${c.display}/${c.opacity}`; })() };
         new Image().src = "/api/p/plog?" + new URLSearchParams(Object.entries(d).map(([k, x]) => [k, String(x)]));
       } catch (e) { new Image().src = "/api/p/plog?diag=safari&fail=" + encodeURIComponent(String(e).slice(0, 100)); }
     }, 8000);

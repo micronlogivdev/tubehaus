@@ -127,3 +127,5 @@ html.sfx1 .ytp { container-type: normal !important; }
 html.sfx2 .ytp, html.sfx2 .w-slot { overflow: visible !important; border-radius: 0 !important; }
 html.sfx3 .ytp { container-type: normal !important; } html.sfx3 .ytp, html.sfx3 .w-slot { overflow: visible !important; border-radius: 0 !important; }
 html.sfx3 .ytp video { transform: translateZ(0); }
+html.sfx7 .ytp-poster { display: none !important; }
+html.sfx8 .ytp > :not(video):not(.ytp-bottom) { display: none !important; } html.sfx8 #ambient { display: none !important; }
