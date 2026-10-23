@@ -660,12 +660,31 @@ export class Player {
     });
   }
 
+  // TEMP (ClearTube): Safari shows a black picture with sound; report what the player sees to our own server log
+  safariDiag() {
+    if (this.diagFor === this.info?.videoId || !/^((?!chrome|chromium|crios|fxios|android).)*safari/i.test(navigator.userAgent)) return;
+    this.diagFor = this.info?.videoId;
+    setTimeout(() => {
+      try {
+        const v = this.video, q = v.getVideoPlaybackQuality?.() || {}, t = this.curTrack() || {}, b = v.getBoundingClientRect();
+        const top = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
+        const cs = getComputedStyle(v);
+        const d = { diag: "safari", id: this.info?.videoId, ua: navigator.userAgent.replace(/^Mozilla\/5\.0 /, "").slice(0, 90),
+          mse: typeof window.MediaSource, mms: typeof window.ManagedMediaSource, vc: t.videoCodec, ac: t.audioCodec, th: t.height, fr: t.frameRate,
+          vw: v.videoWidth, vh: v.videoHeight, rs: v.readyState, ct: Math.round(v.currentTime), frames: q.totalVideoFrames, drop: q.droppedVideoFrames,
+          box: `${Math.round(b.width)}x${Math.round(b.height)}`, top: top ? (top.tagName + "." + top.className).slice(0, 60) : "none",
+          op: cs.opacity, vis: cs.visibility, disp: cs.display, err: v.error ? v.error.code : "" };
+        new Image().src = "/api/p/plog?" + new URLSearchParams(Object.entries(d).map(([k, x]) => [k, String(x)]));
+      } catch (e) { new Image().src = "/api/p/plog?diag=safari&fail=" + encodeURIComponent(String(e).slice(0, 100)); }
+    }, 8000);
+  }
+
   // ------------------------------------------------------------ video events
   bindVideo() {
     const v = this.video, r = this.root;
     v.addEventListener("play", () => { r.classList.remove("paused"); this.setIcons(); this.autoHide(); });
     v.addEventListener("pause", () => { r.classList.add("paused"); this.setIcons(); this.showCtl(true); this.on.progress?.(true); });
-    v.addEventListener("playing", () => { this.setBuffering(false); r.classList.remove("poster"); this.hideErr(); });
+    v.addEventListener("playing", () => { this.setBuffering(false); r.classList.remove("poster"); this.hideErr(); this.safariDiag(); });
     v.addEventListener("waiting", () => this.setBuffering(true));
     v.addEventListener("loadeddata", () => r.classList.remove("poster"));
     v.addEventListener("durationchange", () => this.drawSegs());
