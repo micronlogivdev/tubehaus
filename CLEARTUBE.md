@@ -68,3 +68,15 @@ home-to-watch navigation, pause/seek/resume, fullscreen and back, mini-player an
 expand, a second video, and successive Shorts. On Mac also toggle theater mode
 and resize across 1000px. Picture and sound should survive each transition with
 no unintended restart. Check desktop Chrome as a regression control.
+
+
+## Spatial Glass appearance
+
+The default `spatial` theme now follows the warm frosted-window direction of
+[Harshit Tewatia's YouTube Spatial UI](https://dribbble.com/shots/22513715-Yotube-Spatial-UI):
+one inset glass surface, a room backdrop, compact navigation and a denser video
+grid. Styles are in `web/y/spatial.css`; the generated 124 KiB backdrop is served
+locally from `web/y/assets/spatial-room.webp` through the existing `/y/*` route.
+Spatial Light, ordinary themes and TV styling are excluded from these overrides.
+The backdrop and glass are pseudo-elements behind the content, not filters or
+transforms on the video's ancestors. See `design-qa.md` for preview checks.
