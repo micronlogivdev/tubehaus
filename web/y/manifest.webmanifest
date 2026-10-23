@@ -1,6 +1,6 @@
 {
-  "name": "TubeHaus",
-  "short_name": "TubeHaus",
+  "name": "ClearTube",
+  "short_name": "ClearTube",
     "start_url": "/",
   "scope": "/",
   "display": "standalone",

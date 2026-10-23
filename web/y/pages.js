@@ -650,6 +650,26 @@ export function settingsPage(page) {
       await api("/api/p/auth/logout", { method: "POST", body: {} }).catch(() => { });
       location.href = "/login";
     };
+    const btn = el(`<button class="pill ghost chpw">Change password</button>`);
+    $(".logout", row).after(btn);
+    btn.onclick = () => {
+      if ($(".pwform", page)) return;
+      const f = el(`<form class="pwform set-btns" autocomplete="on">
+        <input type="text" name="username" autocomplete="username" value="${esc(d.user)}" hidden>
+        <label>Current password <input type="password" name="old" autocomplete="current-password" required></label>
+        <label>New password <input type="password" name="new" autocomplete="new-password" minlength="8" maxlength="200" required></label>
+        <button class="pill" type="submit">Save</button></form>`);
+      row.after(f);
+      $("input[name=old]", f).focus();
+      f.onsubmit = async (e) => {
+        e.preventDefault();
+        const r = await fetch("/api/p/auth/password", { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ old: f.old.value, new: f.new.value }) }).catch(() => null);
+        const j = r ? await r.json().catch(() => ({})) : {};
+        if (r && r.ok) { f.remove(); toast("Password changed. Other devices were signed out"); }
+        else toast(j.error || "Could not change the password");
+      };
+    };
   }).catch(() => { });
   $(".simp", page).onclick = () => $(".simpfile", page).click();
   $(".simpfile", page).onchange = (e) => importFile(e.target.files[0]);

@@ -224,7 +224,7 @@ setInterval(bell, 10 * 60000);
 // ---------------------------------------------------------------- account menu
 $("#acct").onclick = (e) => {
   const th = { system: $t("기기 테마 사용"), dark: $t("어두운 테마"), light: $t("밝은 테마") };
-  popup(e.currentTarget, `<div class="acct-h">${icon("account")}<div><b>TubeHaus</b><span>${$t("내 라이브러리")}</span></div></div><hr>` +
+  popup(e.currentTarget, `<div class="acct-h">${icon("account")}<div><b>ClearTube</b><span>${$t("내 라이브러리")}</span></div></div><hr>` +
     mi("you", "libr", $t("내 페이지")) + mi("history", "history", $t("시청 기록")) + mi("subs", "subs", $t("구독 관리")) + "<hr>" +
     mi("theme", "dark", $t("디자인: ") + th[settings.theme]) + mi("lang", "globe", langLabel() + ": " + LANGS.find(([c]) => c === LANG)[1]) +
     mi("settings", "gear", $t("설정")) + mi("keys", "keyboard", $t("단축키")),

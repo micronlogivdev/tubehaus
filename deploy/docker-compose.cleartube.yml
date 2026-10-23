@@ -1,0 +1,22 @@
+# ClearTube additions on top of docker-compose.yml. On the server copy it to ./docker-compose.override.yml
+# (docker compose picks that up by itself). Set YT_UPSTREAM=http://user:pass@ip:port in .env.
+services:
+  ytproxy:
+    image: gogost/gost:3.0.0
+    restart: unless-stopped
+    command: ["-L", "http://:8080", "-F", "${YT_UPSTREAM}"]
+  tubehaus:
+    environment:
+      HT_YT_PROXY: ytproxy:8080
+      HT_WARP_ROTATE: "0"
+      HT_ACCOUNTS: "1"
+      HT_MAX_ACCOUNTS: "3"
+    volumes:
+      - ./server/tubehaus_server.py:/app/server/tubehaus_server.py:ro
+    depends_on: [ytproxy]
+  companion:
+    environment:
+      - PROXY=http://ytproxy:8080
+  caddy:
+    volumes:
+      - ./deploy/Caddyfile.accounts:/etc/caddy/Caddyfile:ro
