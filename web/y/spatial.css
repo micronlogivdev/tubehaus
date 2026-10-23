@@ -146,7 +146,7 @@ html.spatial:not(.spatial-light):not(.tv) body {
 }
 html.spatial:not(.spatial-light):not(.tv) body::before {
   inset: 0; z-index: -2; filter: none;
-  background: #28251f;
+  background: #28251f url('/y/assets/spatial-room.webp') center / cover no-repeat;
 }
 html.spatial:not(.spatial-light):not(.tv) body::after {
   content: ''; position: absolute; pointer-events: none; z-index: -1;
