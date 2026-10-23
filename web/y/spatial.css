@@ -87,3 +87,37 @@ html.spatial:not(.tv) .sheet-in { border-radius: 24px 24px 0 0; }
   html.spatial:not(.tv) .card .th { transition: none; }
   html.spatial:not(.tv) .card:hover .th { transform: none; }
 }
+
+/* ---------- "Spatial Light": white frosted glass over a soft lavender room ---------- */
+html.spatial.spatial-light:not(.tv) {
+  --bg2: rgba(255, 255, 255, .55); --pop: rgba(255, 255, 255, .9); --fg: #1d1b26;
+  --fg2: rgba(29, 27, 38, .66); --fg3: rgba(29, 27, 38, .45);
+  --line: rgba(255, 255, 255, .7); --hover: rgba(255, 255, 255, .6);
+  --chip: rgba(255, 255, 255, .55); --chip-h: rgba(255, 255, 255, .8); --chip-on: #1d1b26; --chip-on-fg: #fff;
+  --input: rgba(255, 255, 255, .6); --input-line: rgba(255, 255, 255, .8); --sbtn: rgba(255, 255, 255, .5);
+  --blue: #5b4bdb; --accent: #ff5c8a;
+  --shadow: 0 12px 40px rgba(90, 60, 130, .18), 0 0 0 1px rgba(255, 255, 255, .6);
+  background: #e9dcef;
+}
+html.spatial.spatial-light:not(.tv) body::before {
+  background:
+    radial-gradient(45% 55% at 12% 15%, rgba(255, 182, 214, .75), transparent 70%),
+    radial-gradient(50% 60% at 88% 20%, rgba(196, 178, 255, .8), transparent 70%),
+    radial-gradient(55% 60% at 70% 90%, rgba(255, 214, 236, .7), transparent 70%),
+    radial-gradient(45% 50% at 20% 85%, rgba(214, 196, 255, .7), transparent 70%),
+    #eadcf0;
+}
+html.spatial.spatial-light:not(.tv) #mguide a.act { background: rgba(255, 92, 138, .16); }
+html.spatial.spatial-light:not(.tv) #mguide a.act .ic, html.spatial.spatial-light:not(.tv) .gi.act .ic { color: var(--accent); }
+html.spatial.spatial-light:not(.tv) .gi.act { background: rgba(255, 92, 138, .16); }
+/* each video sits on its own small glass card */
+html.spatial.spatial-light:not(.tv) .vgrid .card.grid {
+  background: var(--bg2); -webkit-backdrop-filter: var(--glass); backdrop-filter: var(--glass);
+  border: 1px solid var(--line); border-radius: 18px; padding: 8px 8px 12px; box-shadow: 0 6px 20px rgba(90, 60, 130, .12);
+}
+html.spatial.spatial-light:not(.tv) .vgrid .card.grid .th { border-radius: 12px; }
+html.spatial.spatial-light:not(.tv) .vgrid { row-gap: 24px; }
+html.spatial.spatial-light:not(.tv) .card:hover .th { box-shadow: 0 10px 26px rgba(90, 60, 130, .25); }
+@media (prefers-reduced-transparency: reduce) {
+  html.spatial.spatial-light:not(.tv) { --bg2: rgba(255, 255, 255, .96); --pop: #fff; }
+}

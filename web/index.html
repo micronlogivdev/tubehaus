@@ -17,6 +17,7 @@
   // apply the theme early so the first paint does not flash white
   try { var s = JSON.parse(localStorage.getItem("yt.settings") || "{}"), t = s.theme || "spatial";
     if (t === "spatial") { document.documentElement.classList.add("spatial"); t = "dark"; }
+    if (t === "spatial-light") { document.documentElement.classList.add("spatial", "spatial-light"); t = "light"; }
     if (t === "system") t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
     document.documentElement.dataset.theme = t;
     // calm mode: subscriptions only, no Shorts / trending / recommendations (set before the first paint)
