@@ -21,7 +21,8 @@
     if (t === "system") t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
     document.documentElement.dataset.theme = t;
     // calm mode: subscriptions only, no Shorts / trending / recommendations (set before the first paint)
-    if (s.calm) document.documentElement.classList.add("calm"); } catch (e) { }
+    if (s.calm) document.documentElement.classList.add("calm");
+    var fx = (location.search.match(/[?&]sfx=(\d)/) || [])[1]; if (fx) document.documentElement.classList.add("sfx" + fx); } catch (e) { }
 </script>
 </head>
 <body data-route="">

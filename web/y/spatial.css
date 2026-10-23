@@ -121,3 +121,9 @@ html.spatial.spatial-light:not(.tv) .card:hover .th { box-shadow: 0 10px 26px rg
 @media (prefers-reduced-transparency: reduce) {
   html.spatial.spatial-light:not(.tv) { --bg2: rgba(255, 255, 255, .96); --pop: #fff; }
 }
+
+/* TEMP (ClearTube): Safari black-video experiments, picked with ?sfx=1|2|3 on the URL */
+html.sfx1 .ytp { container-type: normal !important; }
+html.sfx2 .ytp, html.sfx2 .w-slot { overflow: visible !important; border-radius: 0 !important; }
+html.sfx3 .ytp { container-type: normal !important; } html.sfx3 .ytp, html.sfx3 .w-slot { overflow: visible !important; border-radius: 0 !important; }
+html.sfx3 .ytp video { transform: translateZ(0); }
