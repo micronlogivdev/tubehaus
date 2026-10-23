@@ -36,3 +36,35 @@ git cherry-pick <sha>                           # take only the commits you want
 Conflicts usually show up only in the files listed above. New upstream text that says "TubeHaus"
 needs renaming again in `web/y/lang/*.js` (change only the value after `": "`, never the Korean key).
 Then on the server: `git pull && docker compose up -d` (restart `tubehaus` after server changes).
+
+
+## Apple WebKit black video (spatial)
+
+The player was built by `el()`, which parses into a `<template>`'s inert owner
+document. That also creates the `<video>` in the inert document before it is
+adopted into the page. This matches WebKit's template-created video painting
+regression ([320979](https://bugs.webkit.org/show_bug.cgi?id=320979)): decoding
+continues while the inline picture stays black. The initial watch route already
+mounts the player before Shaka attaches; later same-document `append()` moves
+are not needed to trigger the template creation problem.
+
+`Player.build()` now creates the root with `document.createElement("div")` and
+parses its children in the page document. The video is never template-owned;
+controls, Shaka, and watch/theater/mini/Shorts moves keep their existing behavior.
+No browser sniffing or stream reload is needed. Keep the TEMP Safari diagnostics
+and `sfx` experiments until the owner confirms the fix on Mac and iPhone; the
+existing diagnostic browser filter does not include iPhone Chrome.
+
+Local validation: the before/after browser fixture confirms template ownership
+before the fix and page-document ownership after it; both load H.264/AAC DASH
+through Shaka and keep decoding after a container move in desktop Chrome.
+JavaScript/Python syntax, strict translations, and all 44 server tests pass.
+Native Safari automation could not start, so Apple-device confirmation is pending.
+
+Device acceptance (still required): deploy the commit and reload without `sfx`
+parameters, then test the previously failing video inline for at least 20 seconds
+on Mac Safari, iPhone Safari, and iPhone Chrome. Test direct watch-page entry,
+home-to-watch navigation, pause/seek/resume, fullscreen and back, mini-player and
+expand, a second video, and successive Shorts. On Mac also toggle theater mode
+and resize across 1000px. Picture and sound should survive each transition with
+no unintended restart. Check desktop Chrome as a regression control.
