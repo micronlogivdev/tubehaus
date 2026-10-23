@@ -88,6 +88,7 @@ function loadShaka() {
 }
 // prefetch it in idle time after the home page is up (so a click starts at once)
 // (weak devices like TVs do not prefetch right away: the page freezes while it loads)
+const APPLE_SAFARI = /^((?!chrome|chromium|crios|fxios|edg|android|linux).)*safari/i.test(navigator.userAgent);
 export const TV_DEVICE = /TubeHausTV|Android TV|GoogleTV|Google TV|AFT[A-Z]|BRAVIA|SMART-TV|SmartTV|HbbTV|Tizen|Web0S|webOS|TV Bro|Puffin.*TV|CrKey|AndroidTV/i.test(navigator.userAgent);
 // (TVs wait 6 s after the home page, so the first click does not wait either)
 setTimeout(() => (window.requestIdleCallback || ((f) => f()))(() => loadShaka().catch(() => { }), { timeout: 8000 }), TV_DEVICE ? 6000 : 0);
@@ -673,7 +674,8 @@ export class Player {
           mse: typeof window.MediaSource, mms: typeof window.ManagedMediaSource, vc: t.videoCodec, ac: t.audioCodec, th: t.height, fr: t.frameRate,
           vw: v.videoWidth, vh: v.videoHeight, rs: v.readyState, ct: Math.round(v.currentTime), frames: q.totalVideoFrames, drop: q.droppedVideoFrames,
           box: `${Math.round(b.width)}x${Math.round(b.height)}`, top: top ? (top.tagName + "." + top.className).slice(0, 60) : "none",
-          op: cs.opacity, vis: cs.visibility, disp: cs.display, err: v.error ? v.error.code : "" };
+          op: cs.opacity, vis: cs.visibility, disp: cs.display, err: v.error ? v.error.code : "",
+          amb: !!this.ambCanvas?.classList.contains("on"), apple: APPLE_SAFARI };
         new Image().src = "/api/p/plog?" + new URLSearchParams(Object.entries(d).map(([k, x]) => [k, String(x)]));
       } catch (e) { new Image().src = "/api/p/plog?diag=safari&fail=" + encodeURIComponent(String(e).slice(0, 100)); }
     }, 8000);
@@ -1152,7 +1154,8 @@ export class Player {
       // Copying a large hardware-decoded frame breaks the accelerated path: frames collapse and flicker (down to 1 fps at 8K).
       // So draw only in the dark theme (where it shows), at 1440p or less, not HDR, once a second.
       const t = this.curTrack();
-      const heavy = !t || t.height > 1440 || t.hdr === "PQ" || t.hdr === "HLG" || /\.10\./.test(t.videoCodec || "");
+      // Apple Safari (Mac/iPhone): copying a frame of a hardware-decoded video turns the video itself black, sound keeps playing
+      const heavy = APPLE_SAFARI || !t || t.height > 1440 || t.hdr === "PQ" || t.hdr === "HLG" || /\.10\./.test(t.videoCodec || "");
       if (!c || !c.isConnected || !settings.ambient || heavy || document.documentElement.dataset.theme !== "dark" ||
           v.readyState < 2 || v.paused || document.hidden || this.mode !== "default" && this.mode !== "theater") { if (c && heavy) c.classList.remove("on"); return; }
       try {
