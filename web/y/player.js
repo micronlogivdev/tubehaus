@@ -88,6 +88,7 @@ function loadShaka() {
 }
 // prefetch it in idle time after the home page is up (so a click starts at once)
 // (weak devices like TVs do not prefetch right away: the page freezes while it loads)
+const SFX = +((location.search.match(/[?&]sfx=(\d)/) || [])[1] || 0);   // TEMP Safari experiments
 const APPLE_SAFARI = /^((?!chrome|chromium|crios|fxios|edg|android|linux).)*safari/i.test(navigator.userAgent);
 export const TV_DEVICE = /TubeHausTV|Android TV|GoogleTV|Google TV|AFT[A-Z]|BRAVIA|SMART-TV|SmartTV|HbbTV|Tizen|Web0S|webOS|TV Bro|Puffin.*TV|CrKey|AndroidTV/i.test(navigator.userAgent);
 // (TVs wait 6 s after the home page, so the first click does not wait either)
@@ -180,6 +181,11 @@ export class Player {
   async init() {
     if (this.sp) return;
     await loadShaka();
+    // TEMP (ClearTube): Safari black-video experiments: 4/6 = classic MediaSource instead of ManagedMediaSource
+    if ((SFX === 4 || SFX === 6) && window.MediaSource && window.ManagedMediaSource) {
+      try { delete window.ManagedMediaSource; } catch { }
+      try { Object.defineProperty(window, "ManagedMediaSource", { value: undefined, configurable: true }); } catch { }
+    }
     shaka.polyfill.installAll();
     this.sp = new shaka.Player();
     await this.sp.attach(this.video);
@@ -365,6 +371,7 @@ export class Player {
   userCap() {
     // Default: always the best quality. A cap chosen in settings limits it; data saver means 480p or less.
     // TVs: up to the screen resolution (more is invisible and only makes the start slower)
+    if (SFX === 5 || SFX === 6) return 720;   // TEMP Safari experiment
     if (settings.dataSaver) return 480;
     if (settings.quality !== "auto" && settings.quality !== "max") return +settings.quality;
     // TVs default to 720p (starts fast). Choosing higher in the menu plays that video at that quality
@@ -675,7 +682,7 @@ export class Player {
           vw: v.videoWidth, vh: v.videoHeight, rs: v.readyState, ct: Math.round(v.currentTime), frames: q.totalVideoFrames, drop: q.droppedVideoFrames,
           box: `${Math.round(b.width)}x${Math.round(b.height)}`, top: top ? (top.tagName + "." + top.className).slice(0, 60) : "none",
           op: cs.opacity, vis: cs.visibility, disp: cs.display, err: v.error ? v.error.code : "",
-          amb: !!this.ambCanvas?.classList.contains("on"), apple: APPLE_SAFARI, sfx: (document.documentElement.className.match(/sfx\d/) || ["none"])[0] };
+          amb: !!this.ambCanvas?.classList.contains("on"), apple: APPLE_SAFARI, sfx: SFX, mmsUsed: typeof window.ManagedMediaSource };
         new Image().src = "/api/p/plog?" + new URLSearchParams(Object.entries(d).map(([k, x]) => [k, String(x)]));
       } catch (e) { new Image().src = "/api/p/plog?diag=safari&fail=" + encodeURIComponent(String(e).slice(0, 100)); }
     }, 8000);
