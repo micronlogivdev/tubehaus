@@ -10,6 +10,7 @@ import re
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
 
 STATE = tempfile.mkdtemp(prefix="tubehaus-test-")
 os.environ.update(HT_STATE=STATE, HT_YT_PROXY="", HT_WARP_ROTATE="0")
@@ -375,6 +376,46 @@ class LoadLimits(unittest.TestCase):
         self.assertEqual(len(calls), 1)
         self.assertEqual(len(out), 8)
         self.assertTrue(all(code == 200 for code, _ in out))
+
+
+class VideoPrefetch(unittest.TestCase):
+    def test_prefetch_configuration(self):
+        # Import fresh configuration with isolated process-environment values.
+        for value, want in ((None, 0), ("", 0), ("bad", 0), ("-2", 0), ("2", 2)):
+            with self.subTest(value=value), patch.dict(os.environ):
+                if value is None:
+                    os.environ.pop("HT_VID_PREFETCH", None)
+                else:
+                    os.environ["HT_VID_PREFETCH"] = value
+                cfg_spec = importlib.util.spec_from_file_location("prefetch_config", ts.__file__)
+                cfg = importlib.util.module_from_spec(cfg_spec)
+                cfg_spec.loader.exec_module(cfg)
+                self.assertEqual(cfg.VID_PREFETCH, want)
+
+    def test_disabled_prefetch_makes_no_lookup(self):
+        recommended = {"recommendedVideos": [{"videoId": "jNQXAC9IVRw"}]}
+        for public, limit in ((False, 0), (True, 2)):
+            with self.subTest(public=public), patch.object(ts, "PUBLIC_MODE", public), \
+                    patch.object(ts, "VID_PREFETCH", limit), patch.object(ts, "vid_fetch_once") as fetch:
+                ts.vid_bg(None, recommended)
+                fetch.assert_not_called()
+
+    def test_disabled_prefetch_still_refreshes_requested_video(self):
+        key = "/api/v1/videos/jNQXAC9IVRw?test=refresh"
+        with patch.object(ts, "VID_PREFETCH", 0), patch.object(ts, "vid_fetch") as fetch:
+            ts.vid_busy.add(key)
+            ts.vid_bg(key, {"recommendedVideos": [{"videoId": "aqz-KE-bpKQ"}]})
+            fetch.assert_called_once_with(key)
+            self.assertNotIn(key, ts.vid_busy)
+
+    def test_opt_in_prefetch_skips_cached_and_respects_limit(self):
+        hot, cold, extra = "jNQXAC9IVRw", "aqz-KE-bpKQ", "M7lc1UVf-VE"
+        recommendations = {"recommendedVideos": [{"videoId": v} for v in ("bad", hot, cold, extra)]}
+        with patch.object(ts, "PUBLIC_MODE", False), patch.object(ts, "VID_PREFETCH", 1), \
+                patch.object(ts, "vid_cache", {"/api/v1/videos/" + hot: (time.time(), 200, b"{}")}), \
+                patch.object(ts, "vid_fetch_once") as fetch, patch.object(ts.time, "sleep"):
+            ts.vid_bg(None, recommendations)
+            fetch.assert_called_once_with("/api/v1/videos/" + cold)
 
 
 class Accounts(unittest.TestCase):

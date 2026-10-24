@@ -94,3 +94,14 @@ include desktop/phone layout and real upstream search.
 Pre-feature restore point: `backup/pre-search-filters-2026-10-23` at
 `9816ecb5bf3064ec241fa0fb88c9162ed9669c50`. Revert the feature commit and deploy the
 new revert commit to undo these controls without resetting branch history.
+
+
+## Reducing speculative YouTube lookups
+
+Recommendation video-info prefetch is now off by default. `HT_VID_PREFETCH=0`
+avoids warming videos that nobody may watch; set a positive integer only to opt
+in. Docker Compose passes through the same setting. Public mode always disables
+these warmups. On-demand lookups and stale-cache refresh are retained. See
+`YOUTUBE_REQUEST_LOAD_REVIEW.md` for the incident critique, ranked options,
+validation and deployment review. No configuration can guarantee an exit avoids
+YouTube challenges.

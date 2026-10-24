@@ -76,11 +76,11 @@ LIVE_BASE = LIVE_ORIGIN + "/api/p/live/s/"   # + base64url(segment url) + ".ts";
 # a YouTube round trip: measured 0.9-2.1 s on a click, 0.003 s warm.
 # The signed googlevideo URLs in the answer stay valid for six hours, so a recent
 # copy is just as playable. Serve it straight back, refresh behind the user once
-# it ages, and warm the recommendations the user is most likely to click next.
+# it ages. Speculative recommendation lookups are opt-in to limit upstream load.
 VID_FRESH = 900        # younger than this: hand it over, do nothing else
 VID_STALE = 7200       # older than this: fetch synchronously (URLs would be near expiry)
 VID_KEEP = 400         # entries
-VID_PREFETCH = 4       # recommended videos warmed after a cold click (off on public instances)
+VID_PREFETCH = max(0, env_int("HT_VID_PREFETCH", 0))  # opt-in recommendation lookups; always off in public mode
 vid_cache = {}         # path -> (ts, code, body)
 vid_lk = threading.Lock()
 vid_busy = set()       # paths currently being refreshed
@@ -161,7 +161,7 @@ def vid_bg(key, prefetch_from=None):
         finally:
             with vid_lk:
                 vid_busy.discard(key)
-    if not prefetch_from or PUBLIC_MODE:
+    if not prefetch_from or PUBLIC_MODE or VID_PREFETCH == 0:
         return
     try:
         ids = [v.get("videoId") for v in (prefetch_from.get("recommendedVideos") or [])]
@@ -176,8 +176,8 @@ def vid_bg(key, prefetch_from=None):
                 hot = k in vid_cache
             if hot:
                 continue
-            time.sleep(1.0)      # a human clicking, not a crawler
-            vid_fetch(k)
+            time.sleep(1.0)      # space optional background lookups
+            vid_fetch_once(k)
             warmed += 1
         if warmed:
             log("videos", "prefetched %d recommended" % warmed, every=300)
@@ -2579,7 +2579,7 @@ class H(BaseHTTPRequestHandler):
                     d = json.loads(body)
             except Exception as ex:
                 log("videos", "parse FAIL %d %s" % (code, repr(ex)[:100]), t0)
-            if isinstance(d, dict) and d.get("recommendedVideos"):
+            if VID_PREFETCH > 0 and not PUBLIC_MODE and isinstance(d, dict) and d.get("recommendedVideos"):
                 threading.Thread(target=vid_bg, args=(None, d), name="vid-warm", daemon=True).start()
         self.send_response(code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
