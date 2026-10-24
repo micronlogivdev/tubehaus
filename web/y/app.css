@@ -200,6 +200,14 @@ body.guide-open #scrim { opacity: 1; pointer-events: auto; }
 .fcol a.on { color: var(--fg); font-weight: 500; }
 .fcol a .ic { width: 16px; height: 16px; }
 .fcol a:hover { color: var(--fg); }
+.view-range { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: end; }
+.view-range h4, .view-range p { flex-basis: 100%; margin: 0; }
+.view-range label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--fg2); min-width: 0; }
+.view-range input { width: 180px; max-width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid var(--input-line); border-radius: 8px; background: var(--input); color: var(--fg); font: inherit; }
+.view-range-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.view-range-actions a.pill { padding: 8px 16px; }
+.view-range p, .search-refinement-note { font-size: 13px; line-height: 1.5; color: var(--fg2); }
+.search-more { margin: 16px auto 32px; display: flex; }
 .row-pl .card.pl { display: flex; gap: 16px; margin-bottom: 16px; }
 .row-pl .card.pl .th { width: 360px; flex: none; }
 

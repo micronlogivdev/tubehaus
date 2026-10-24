@@ -68,3 +68,29 @@ home-to-watch navigation, pause/seek/resume, fullscreen and back, mini-player an
 expand, a second video, and successive Shorts. On Mac also toggle theater mode
 and resize across 1000px. Picture and sound should survive each transition with
 no unintended restart. Check desktop Chrome as a regression control.
+
+## Search view-count filters
+
+The existing search Filters panel supports Most views and Newest uploaded through
+upstream search, plus Least views and Oldest uploaded over fetched videos.
+Minimum/maximum view counts are inclusive and also apply only to fetched videos.
+These local refinements select video results, show the matching/loaded counts,
+and use an explicit Load more results button. An empty filtered page does not
+end pagination; only an empty upstream response does. Unknown view counts are
+excluded by a numeric range and sort last for Least views. Missing upload dates
+sort last for Oldest uploaded. New pages merge, deduplicate, and re-sort all loaded
+videos. No YouTube API key is required.
+
+Filter settings are stored in the search URL (`min_views`, `max_views`,
+`sort=views_asc|date_asc`); changing result type to channels/playlists/movies clears
+video-only refinements. Blank bounds mean no limit; zero is a valid bound.
+
+Validation: `node tests/test_search_filters.mjs` checks numeric bounds, unknown
+metadata, zero views, inclusive ranges, and ascending sort behavior. Local browser
+fixtures also covered empty-match pagination, exhaustion, range validation,
+Apply/Clear, URL retention, and browser Back. Production verification should
+include desktop/phone layout and real upstream search.
+
+Pre-feature restore point: `backup/pre-search-filters-2026-10-23` at
+`9816ecb5bf3064ec241fa0fb88c9162ed9669c50`. Revert the feature commit and deploy the
+new revert commit to undo these controls without resetting branch history.
