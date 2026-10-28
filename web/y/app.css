@@ -277,7 +277,9 @@ input.sw:checked::after { left: 19px; background: var(--blue); }
 .w-panel:not(:empty), .w-plpanel:not(:empty) { margin-bottom: 16px; }
 .pn, .plp { border: 1px solid var(--line); background: var(--bg2); }
 .pn-h, .plp-h { display: flex; align-items: center; justify-content: space-between; padding: 12px 8px 12px 16px; border-bottom: 1px solid var(--line); font-size: 16px; }
-.pn-h .x { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+.pn-h .x, .pn-h .tr-dl { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+.pn-act { display: flex; align-items: center; }
+.tr-sel { margin-left: 6px; max-width: 70%; font: inherit; color: var(--fg); background: var(--chip); border: 0; border-radius: 6px; padding: 4px 6px; }
 .pn-list { max-height: 460px; overflow-y: auto; }
 .pn-it { display: flex; gap: 12px; align-items: center; padding: 8px 16px; width: 100%; text-align: left; }
 .pn-it:hover { background: var(--hover); }

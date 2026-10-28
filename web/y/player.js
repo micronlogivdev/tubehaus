@@ -17,7 +17,7 @@ function vttTime(s) {
   const p = s.trim().split(":");
   return p.reduce((a, b) => a * 60 + parseFloat(b.replace(",", ".")), 0);
 }
-function parseVtt(txt) {
+export function parseVtt(txt) {
   const cues = [];
   for (const block of txt.replace(/\r/g, "").split(/\n{2,}/)) {
     const lines = block.split("\n");
@@ -26,7 +26,8 @@ function parseVtt(txt) {
     const [a, b] = lines[i].split("-->");
     const s = vttTime(a), e = vttTime(b.trim().split(/\s+/)[0]);
     // tags (<c>, <i>, timestamps) and entities (&amp;) off; DOMParser never runs scripts
-    const text = new DOMParser().parseFromString(lines.slice(i + 1).join("\n"), "text/html").body.textContent.trim();
+    // (<00:00:01.230> karaoke timestamps aren't HTML tags, so they go first)
+    const text = new DOMParser().parseFromString(lines.slice(i + 1).join("\n").replace(/<\d[\d:.]*>/g, ""), "text/html").body.textContent.trim();
     if (!text || e - s < 0.05) continue;
     cues.push({ s, e, text });
   }

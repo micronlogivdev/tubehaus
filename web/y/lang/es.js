@@ -447,5 +447,8 @@ export default {
  "시도가 너무 많아요. 몇 분 뒤에 다시 해 주세요": "Demasiados intentos. Espera unos minutos",
  "사용자 이름이나 비밀번호가 틀렸어요": "Usuario o contraseña incorrectos",
  "계정을 만들지 못했어요": "No se pudo crear la cuenta",
- "로그인해 주세요": "Inicia sesión"
+ "로그인해 주세요": "Inicia sesión",
+ "스크립트 다운로드": "Descargar transcripción",
+ "텍스트 (.txt)": "Texto (.txt)",
+ "타임스탬프 포함 텍스트 (.txt)": "Texto con marcas de tiempo (.txt)"
 };

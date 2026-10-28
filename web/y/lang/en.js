@@ -464,5 +464,8 @@ export default {
  "시도가 너무 많아요. 몇 분 뒤에 다시 해 주세요": "Too many attempts. Please wait a few minutes",
  "사용자 이름이나 비밀번호가 틀렸어요": "Wrong user name or password",
  "계정을 만들지 못했어요": "Could not create the account",
- "로그인해 주세요": "Please sign in"
+ "로그인해 주세요": "Please sign in",
+ "스크립트 다운로드": "Download transcript",
+ "텍스트 (.txt)": "Text (.txt)",
+ "타임스탬프 포함 텍스트 (.txt)": "Text with timestamps (.txt)"
 };

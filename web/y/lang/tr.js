@@ -447,5 +447,8 @@ export default {
  "시도가 너무 많아요. 몇 분 뒤에 다시 해 주세요": "Çok fazla deneme. Lütfen birkaç dakika bekleyin",
  "사용자 이름이나 비밀번호가 틀렸어요": "Kullanıcı adı veya şifre yanlış",
  "계정을 만들지 못했어요": "Hesap oluşturulamadı",
- "로그인해 주세요": "Lütfen giriş yapın"
+ "로그인해 주세요": "Lütfen giriş yapın",
+ "스크립트 다운로드": "Transkripti indir",
+ "텍스트 (.txt)": "Metin (.txt)",
+ "타임스탬프 포함 텍스트 (.txt)": "Zaman damgalı metin (.txt)"
 };
