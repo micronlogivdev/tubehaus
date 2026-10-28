@@ -215,6 +215,53 @@ def _inv(path, timeout=60):
     return urllib.request.urlopen(INV + path, timeout=timeout).read()
 
 
+# ---------- captions: Invidious first, then YouTube via yt-dlp (Invidious' caption fetch gets 400s); cached on disk ----------
+CC = f"{STATE}/cc"
+_cc_locks = {}
+_cc_guard = threading.Lock()
+
+
+def cc_vtt(vid, lang, auto=False, label=""):
+    """One caption track as WebVTT bytes. lang = Invidious' language_code, auto = auto-generated track."""
+    # vid and lang end up in a file name and a yt-dlp regex: only safe characters get through
+    if not re.fullmatch(r"[\w-]{11}", vid) or not re.fullmatch(r"[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*", lang):
+        raise ValueError("bad video id or language")
+    os.makedirs(CC, exist_ok=True)
+    cache = os.path.join(CC, "%s.%s%s.vtt" % (vid, lang, ".auto" if auto else ""))
+    with _cc_guard:
+        lock = _cc_locks.setdefault(cache, threading.Lock())
+    with lock:                                      # the player and the transcript ask at the same time: fetch once
+        if os.path.exists(cache):
+            return open(cache, "rb").read()
+        t0, data, src = time.time(), b"", "invidious"
+        if label:
+            try:
+                data = _inv("/api/v1/captions/%s?label=%s" % (vid, urllib.parse.quote_plus(label)), timeout=20)
+            except Exception:
+                data = b""
+        if b"-->" not in data:
+            src = "yt-dlp"
+            import tempfile
+            with tempfile.TemporaryDirectory() as d:
+                out = subprocess.run([YTDLP] + (["--proxy", "http://" + YT_PROXY] if YT_PROXY else []) + [
+                    "--skip-download", "--write-auto-subs" if auto else "--write-subs", "--sub-langs", lang,
+                    "--sub-format", "vtt", "--no-warnings", "-o", os.path.join(d, "t"),
+                    "https://www.youtube.com/watch?v=" + vid],
+                    capture_output=True, text=True, timeout=120,
+                    env={**os.environ, "PATH": os.environ.get("PATH", "") + ":/usr/local/bin"})
+                f = next((os.path.join(d, x) for x in os.listdir(d) if x.endswith(".vtt")), None)
+                data = open(f, "rb").read() if f else b""
+            if b"-->" not in data:
+                err = (out.stderr.strip().splitlines() or ["no captions"])[-1][:150]
+                log("cc", f"{vid} {lang}{' auto' if auto else ''} FAIL {err}", t0, every=0)
+                raise ValueError("Couldn't get the captions")
+        tmp = cache + ".part"
+        open(tmp, "wb").write(data)
+        os.replace(tmp, cache)
+        log("cc", f"{vid} {lang}{' auto' if auto else ''} via {src} {len(data)}B", t0, every=0)
+        return data
+
+
 def _vtt_cues(text):
     """[(timing line, [text lines])] in file order."""
     out, cur = [], None
@@ -299,7 +346,8 @@ def sub_vtt(vid, tl=SUB_LANG):
         or (tracks[0] if tracks else None)
     if not pick:
         raise ValueError("This video has no captions to translate")
-    raw = _inv(pick["url"]).decode("utf-8", "replace")
+    raw = cc_vtt(vid, pick.get("languageCode") or "en", "auto" in (pick.get("label") or "").lower(),
+                 pick.get("label") or "").decode("utf-8", "replace")
     cues = _vtt_cues(raw)[:SUB_MAX]
     if not cues:
         raise ValueError("Couldn't read the captions")
@@ -2341,15 +2389,19 @@ class H(BaseHTTPRequestHandler):
             if p.endswith("/cc.json") and not (WHISPER_BIN and WHISPER_MODEL):
                 return self.send(200, {"status": "off", "lag": None, "cues": {}})
             return self.live(p)
-        if "/sub/" in p:
+        if "/sub/" in p or "/cc/" in p:
             vid = p.rsplit("/", 1)[-1].replace(".vtt", "")
             if not re.fullmatch(r"[\w-]{11}", vid):
                 return self.send(400, {"error": "Invalid video ID"})
             try:
-                tl = self.qs().get("tl") or SUB_LANG     # the viewer's interface language
-                if not re.fullmatch(r"[a-z]{2}(-[A-Za-z]{2,4})?", tl):
-                    return self.send(400, {"error": "bad language"})
-                data = sub_vtt(vid, tl)
+                q = self.qs()
+                if "/cc/" in p:                          # an original caption track
+                    data = cc_vtt(vid, q.get("lang") or "", q.get("auto") == "1", (q.get("label") or "")[:100])
+                else:
+                    tl = q.get("tl") or SUB_LANG          # the viewer's interface language
+                    if not re.fullmatch(r"[a-z]{2}(-[A-Za-z]{2,4})?", tl):
+                        return self.send(400, {"error": "bad language"})
+                    data = sub_vtt(vid, tl)
             except Exception as ex:
                 log("sub", "%s FAIL %s" % (vid, repr(ex)[:100]))
                 return self.send(502, {"error": str(ex)})

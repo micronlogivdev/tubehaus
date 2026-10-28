@@ -2,7 +2,7 @@
 import { $, $$, el, esc, icon, api, lib, settings, toast, fmtTime, fmtViews, fmtCount, ago, thumb, normVideo, metaOf, pickThumb, safeHtml, linkify, parseT, copy, PUBLIC } from "./util.js";
 import { videoInfo, prefetch, player, state, card, norm, remember, known, fillProgress, avatar, subBtn, navigate, videoMenu, shareDialog, saveDialog, downloadDialog, keysDialog, setList, inList, queue, setPosCache, getPos, pageCleanup, popup, mi } from "./core.js";
 import { loadPlaylist } from "./pages.js";
-import { parseVtt } from "./player.js";
+import { loadTranscript, saveTranscript, TR_FORMATS } from "./player.js";
 import { $t, LANG, LOCALE, REGION } from "./i18n.js";
 
 const W = {
@@ -399,37 +399,6 @@ function renderPlaylistPanel(page) {
 }
 
 // ---------------------------------------------------------------- side panel: transcript / chapters
-// caption cues -> transcript lines: a line carried over from the previous cue (rolling auto-captions) is kept once
-function transcriptCues(vtt) {
-  const out = [];
-  let last = "";
-  for (const c of parseVtt(vtt)) {
-    const lines = c.text.split("\n").map((l) => l.trim()).filter(Boolean);
-    while (lines.length && lines[0] === last) lines.shift();
-    if (!lines.length) continue;
-    last = lines[lines.length - 1];
-    out.push({ s: c.s, e: c.e, text: lines.join(" ") });
-  }
-  return out;
-}
-const stamp = (s, sep) => {
-  const ms = Math.max(0, Math.round(s * 1000));
-  return [ms / 3600000, (ms / 60000) % 60, (ms / 1000) % 60].map((x) => String(Math.floor(x)).padStart(2, "0")).join(":") + sep + String(ms % 1000).padStart(3, "0");
-};
-function saveTranscript(cues, fmt, name) {
-  const body = fmt === "txt" ? cues.map((c) => c.text).join("\n")
-    : fmt === "tt" ? cues.map((c) => `[${fmtTime(c.s)}] ${c.text}`).join("\n")
-    : fmt === "srt" ? cues.map((c, i) => `${i + 1}\n${stamp(c.s, ",")} --> ${stamp(c.e, ",")}\n${c.text}\n`).join("\n")
-    : "WEBVTT\n\n" + cues.map((c) => `${stamp(c.s, ".")} --> ${stamp(c.e, ".")}\n${c.text}\n`).join("\n");
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([body.trimEnd() + "\n"], { type: "text/plain;charset=utf-8" }));
-  a.download = `${name}.${fmt === "tt" ? "txt" : fmt}`;
-  document.body.append(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
-}
-
 async function openPanel(kind) {
   const box = $(".w-panel");
   if (!box) return;
@@ -457,15 +426,14 @@ async function openPanel(kind) {
       dl.hidden = true;
       L.innerHTML = `<div class="spinner"></div>`;
       try {
-        const r = await fetch(c.url, { credentials: "same-origin" });
-        if (!r.ok) throw new Error(r.status);
-        const got = transcriptCues(await r.text());
+        const got = await loadTranscript(c.url);
         if (pick !== c || !L.isConnected) return;
         cues = got;
         const langRow = list.length > 1
           ? `<label class="tr-lang">${$t("자막 언어")} <select class="tr-sel">${list.map((x, i) => `<option value="${i}"${x === c ? " selected" : ""}>${esc(x.label)}</option>`).join("")}</select></label>`
           : `<div class="tr-lang">${esc(c.label)}</div>`;
-        L.innerHTML = langRow + cues.map((x) => `<button class="pn-it tr-it" data-seek="${x.s}"><em>${fmtTime(x.s)}</em><span>${esc(x.text)}</span></button>`).join("");
+        L.innerHTML = langRow + (cues.length ? cues.map((x) => `<button class="pn-it tr-it" data-seek="${x.s}"><em>${fmtTime(x.s)}</em><span>${esc(x.text)}</span></button>`).join("")
+          : `<p class='sub'>${$t("스크립트를 불러오지 못했어요")}</p>`);
         dl.hidden = !cues.length;
         const items = $$(".tr-it", L);
         iv = setInterval(() => {
@@ -479,11 +447,8 @@ async function openPanel(kind) {
       } catch { if (pick === c) L.innerHTML = `<p class='sub'>${$t("스크립트를 불러오지 못했어요")}</p>`; }
     };
     L.addEventListener("change", (e) => { if (e.target.matches(".tr-sel")) load(list[+e.target.value]); });
-    dl.onclick = () => popup(dl, mi("txt", "notes", $t("텍스트 (.txt)")) + mi("tt", "notes", $t("타임스탬프 포함 텍스트 (.txt)")) +
-      mi("srt", "download", "SubRip (.srt)") + mi("vtt", "download", "WebVTT (.vtt)"), (fmt) => {
-      if (!cues.length) return;
-      const title = String(W.info?.title || W.id || "transcript").replace(/[\\/:*?"<>|\x00-\x1f]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 120) || "transcript";
-      saveTranscript(cues, fmt, `${title} [${pick.lang}]${fmt === "tt" ? " (timestamps)" : ""}`);
+    dl.onclick = () => popup(dl, TR_FORMATS().map(([f, label]) => mi(f, f === "txt" || f === "tt" ? "notes" : "download", label)).join(""), (fmt) => {
+      if (cues.length) saveTranscript(cues, fmt, W.info?.title || W.id, pick.lang);
     });
     if (!pick) L.innerHTML = `<p class='sub'>${$t("이 영상에는 자막이 없어요")}</p>`;
     else load(pick);

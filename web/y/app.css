@@ -479,6 +479,7 @@ html.public .w-actions .cast { display: none !important; }
 .dlopt small { color: var(--fg2); font-size: 12px; }
 button.dlopt { width: 100%; text-align: left; }
 button.dlopt:disabled { opacity: .5; }
+.tr-lang.dltr { display: block; padding: 4px 8px 8px; }
 .dlprog { margin: 16px 0 4px; }
 .dlbar { height: 6px; background: var(--chip); border-radius: 3px; overflow: hidden; }
 .dlbar i { display: block; height: 100%; width: 0; background: var(--red); transition: width .4s; }

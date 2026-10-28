@@ -41,6 +41,51 @@ export function parseVtt(txt) {
   return cues.sort((x, y) => x.s - y.s);
 }
 
+// A caption track (from /api/v1/videos) served by our server: it asks Invidious, then YouTube via yt-dlp, and caches the file.
+export const ccTrack = (vid, c) => ({
+  label: c.label, lang: c.language_code,
+  url: `/api/p/cc/${vid}.vtt?lang=${encodeURIComponent(c.language_code)}&auto=${/auto/i.test(c.label) ? 1 : 0}&label=${encodeURIComponent(c.label)}`,
+});
+
+// ---------------------------------------------------------------- transcript (panel + download)
+// caption cues -> transcript lines: a line carried over from the previous cue (rolling auto-captions) is kept once
+export function transcriptCues(vtt) {
+  const out = [];
+  let last = "";
+  for (const c of parseVtt(vtt)) {
+    const lines = c.text.split("\n").map((l) => l.trim()).filter(Boolean);
+    while (lines.length && lines[0] === last) lines.shift();
+    if (!lines.length) continue;
+    last = lines[lines.length - 1];
+    out.push({ s: c.s, e: c.e, text: lines.join(" ") });
+  }
+  return out;
+}
+export async function loadTranscript(url) {
+  const r = await fetch(url, { credentials: "same-origin" });
+  if (!r.ok) throw new Error($t("스크립트를 불러오지 못했어요"));
+  return transcriptCues(await r.text());
+}
+const stamp = (s, sep) => {
+  const ms = Math.max(0, Math.round(s * 1000));
+  return [ms / 3600000, (ms / 60000) % 60, (ms / 1000) % 60].map((x) => String(Math.floor(x)).padStart(2, "0")).join(":") + sep + String(ms % 1000).padStart(3, "0");
+};
+export const TR_FORMATS = () => [["txt", $t("텍스트 (.txt)")], ["tt", $t("타임스탬프 포함 텍스트 (.txt)")], ["srt", "SubRip (.srt)"], ["vtt", "WebVTT (.vtt)"]];
+export function saveTranscript(cues, fmt, title, lang) {
+  const body = fmt === "txt" ? cues.map((c) => c.text).join("\n")
+    : fmt === "tt" ? cues.map((c) => `[${fmtTime(c.s)}] ${c.text}`).join("\n")
+    : fmt === "srt" ? cues.map((c, i) => `${i + 1}\n${stamp(c.s, ",")} --> ${stamp(c.e, ",")}\n${c.text}\n`).join("\n")
+    : "WEBVTT\n\n" + cues.map((c) => `${stamp(c.s, ".")} --> ${stamp(c.e, ".")}\n${c.text}\n`).join("\n");
+  const name = String(title || "transcript").replace(/[\\/:*?"<>|\x00-\x1f]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 120) || "transcript";
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([body.trimEnd() + "\n"], { type: "text/plain;charset=utf-8" }));
+  a.download = `${name} [${lang}]${fmt === "tt" ? " (timestamps)" : ""}.${fmt === "tt" ? "txt" : fmt}`;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+}
+
 // ---------------------------------------------------------------- chapters
 export function parseChapters(desc, dur) {
   const out = [];
@@ -441,7 +486,7 @@ export class Player {
   captionList() {
     // YouTube gives no captions for live streams -> our server transcribes the audio (whisper)
     if (this.live && this.info) return [{ label: $t("자동 받아쓰기 (실시간)"), lang: "auto", url: `live:${this.info.videoId}`, liveCc: true }];
-    const list = (this.info?.captions || []).map((c) => ({ label: c.label, lang: c.language_code, url: c.url.replace(/^https?:\/\/[^/]+/, "") }));
+    const list = (this.info?.captions || []).map((c) => ccTrack(this.info.videoId, c));
     if (this.info && !this.live && !list.some((c) => c.lang.startsWith(LANG) && !/auto/i.test(c.label)) && list.length) {
       const name = (LANGS.find(([c]) => c === LANG) || [, LANG])[1];
       list.push({ label: $t("{0} (자동 번역)", name), lang: LANG, url: `/api/p/sub/${this.info.videoId}.vtt?tl=${LANG}`, tr: true });

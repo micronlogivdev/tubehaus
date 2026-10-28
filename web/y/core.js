@@ -1,6 +1,6 @@
 // App skeleton: router, shared state (my library), cards, popup menus, dialogs
 import { $, $$, el, esc, icon, api, lib, settings, local, toast, copy, fmtTime, fmtViews, ago, thumb, normVideo, metaOf, pickThumb, dropCache, PUBLIC } from "./util.js";
-import { Player } from "./player.js";
+import { Player, ccTrack, loadTranscript, saveTranscript, TR_FORMATS } from "./player.js";
 import { $t, $tMsg, fmtShort, LANG, LOCALE } from "./i18n.js";
 
 export const player = new Player();
@@ -352,21 +352,41 @@ export async function downloadDialog(v) {
   const direct = [];
   if (m4a) direct.push({ itag: m4a.itag, label: `${$t("음악만 · M4A {0}kbps", Math.round(m4a.bitrate / 1000))}`, ext: "m4a", size: m4a.clen });
   if (opus) direct.push({ itag: opus.itag, label: `${$t("음악만 · Opus {0}kbps", Math.round(opus.bitrate / 1000))}`, ext: "webm", size: opus.clen });
+  // transcript: fetched only when a format is picked
+  const tracks = info.liveNow ? [] : (info.captions || []).map((c) => ccTrack(v.id, c));
+  const tpick = [tracks.findIndex((c) => c.lang.startsWith(LANG) && !/auto/i.test(c.label)), tracks.findIndex((c) => c.lang.startsWith(LANG))].find((i) => i >= 0) ?? 0;
+  const trHtml = !tracks.length ? "" : `<div class="dlsec">${$t("스크립트")}</div>` +
+    (tracks.length > 1
+      ? `<label class="tr-lang dltr">${$t("자막 언어")} <select class="tr-sel">${tracks.map((c, i) => `<option value="${i}"${i === tpick ? " selected" : ""}>${esc(c.label)}</option>`).join("")}</select></label>`
+      : `<div class="tr-lang dltr">${esc(tracks[0].label)}</div>`) +
+    TR_FORMATS().map(([f, label]) => `<button class="dlopt trx" data-f="${f}">${icon(f === "txt" || f === "tt" ? "notes" : "download")}<span>${esc(label)}</span></button>`).join("");
   box.querySelector(".dlbody").innerHTML =
     (hd.length ? `<div class="dlsec">${$t("동영상 (소리 포함)")}</div>` + hd.map((o, i) =>
       `<button class="dlopt" data-i="${i}">${icon("download")}<span><b>${esc(o.label)}</b> <small>${esc(o.sub)}</small></span><em>${mb(o.size)}</em></button>`).join("") : "") +
     (direct.length ? `<div class="dlsec">${$t("음악")}</div>` + direct.map((o) =>
       `<a class="dlopt" href="/latest_version?id=${esc(v.id)}&itag=${o.itag}&local=true&title=${encodeURIComponent(name + "." + o.ext)}" download="${esc(name + "." + o.ext)}">${icon("audio")}<span>${esc(o.label)}</span>${o.size ? `<em>${mb(+o.size)}</em>` : ""}</a>`).join("") : "") +
+    trHtml +
     `<div class="dlprog" hidden><div class="dlbar"><i></i></div><div class="dltxt"></div></div>` +
     `<p class="hint">${$t("영상과 소리를 서버가 받아서 한 파일로 합친 다음 내려줘요. 창을 닫아도 서버에서 계속 준비하고, 다 되면 알려줘요.")}</p>`;
   box.querySelectorAll("a.dlopt").forEach((a) => (a.onclick = () => { toast($t("다운로드를 시작했어요")); setTimeout(close, 300); }));
-  box.querySelectorAll("button.dlopt").forEach((b) => (b.onclick = async () => {
+  const vbtns = () => box.querySelectorAll("button.dlopt:not(.trx)");
+  vbtns().forEach((b) => (b.onclick = async () => {
     const o = hd[+b.dataset.i];
-    box.querySelectorAll("button.dlopt").forEach((x) => (x.disabled = true));
+    vbtns().forEach((x) => (x.disabled = true));
     try {
       const r = await api("/api/p/yt/dl", { method: "POST", body: { id: v.id, v: o.v, a: o.a, ext: o.ext, name: `${name} (${o.label})` } });
       watchDl(r.job, box);
-    } catch (e) { toast(e.message); box.querySelectorAll("button.dlopt").forEach((x) => (x.disabled = false)); }
+    } catch (e) { toast(e.message); vbtns().forEach((x) => (x.disabled = false)); }
+  }));
+  box.querySelectorAll("button.trx").forEach((b) => (b.onclick = async () => {
+    const t = tracks[+(box.querySelector(".tr-sel")?.value ?? tpick)];
+    b.disabled = true;
+    try {
+      const cues = await loadTranscript(t.url);
+      if (!cues.length) throw new Error($t("스크립트를 불러오지 못했어요"));
+      saveTranscript(cues, b.dataset.f, info.title || v.id, t.lang);
+    } catch (e) { toast(e.message); }
+    b.disabled = false;
   }));
 }
 // follow the server job and download the file when it is done (keeps going if the dialog is closed)
